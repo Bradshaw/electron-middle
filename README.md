@@ -14,13 +14,21 @@ This example will open a window that displays "Hello, world!"
 //   electron index.js
 const middle = require('electron-middle')
 
+// This is where the magic happens
 middle.get((file, cb) => {
   if (file === "/index.html") {
+    // Calling cb with a string or a buffer will behave as if a file was
+    // found with that string or buffer as its contents
     cb("<p>Hello, world!</p>")
   } else {
+    // Calling cb with no parameters will pass the buck to the next
+    // middleware, and if there is none, the default file fetcher will
+    // simply try to load a local file
     cb()
   }
 })
+
+
 function createWindow () {
   let win = new BrowserWindow({width: 800, height: 600})
   
