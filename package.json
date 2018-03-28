@@ -1,0 +1,15 @@
+{
+  "name": "electron-middle",
+  "version": "1.0.0",
+  "description": "Simple electron module to run middleware on file fetches",
+  "engines": {
+    "electron": "1.8.x"
+  },
+  "main": "index.js",
+  "author": "Gaeel Bradshaw-Rodriguez <gaeel@nanoleptic.net> (https://nanoleptic.net/gaeel)",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "async": "2.6.x",
+    "mime": "^1.3.4"
+  }
+}
