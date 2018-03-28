@@ -10,6 +10,8 @@ To install, run `npm install electron-middle`
 This example will open a window that displays "Hello, world!"
 ```javascript
 // index.js
+// Run this file with electron:
+//   electron index.js
 const middle = require('electron-middle')
 
 middle.get((file, cb) => {
