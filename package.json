@@ -2,11 +2,15 @@
   "name": "electron-middle",
   "version": "1.0.0",
   "description": "Simple electron module to run middleware on file fetches",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Bradshaw/electron-middle"
+  },
   "engines": {
     "electron": "1.8.x"
   },
   "main": "index.js",
-  "author": "Gaeel Bradshaw-Rodriguez <gaeel@nanoleptic.net> (https://nanoleptic.net/gaeel)",
+  "author": "Gaeel Bradshaw-Rodriguez <gaeel@nanoleptic.net> (https://spaceshipsin.space)",
   "license": "UNLICENSED",
   "dependencies": {
     "async": "2.6.x",
