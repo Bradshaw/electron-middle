@@ -11,7 +11,7 @@
   },
   "main": "index.js",
   "author": "Gaeel Bradshaw-Rodriguez <gaeel@nanoleptic.net> (https://spaceshipsin.space)",
-  "license": "UNLICENSED",
+  "license": "ISC",
   "dependencies": {
     "async": "2.6.x",
     "mime": "^1.3.4"
