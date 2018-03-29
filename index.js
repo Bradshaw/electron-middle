@@ -87,21 +87,26 @@ function interceptor (request, callback) {
 let stack = []
 
 function init () {
-  app.on('ready'
-    , function doInterceptBufferProtocol () {
-      protocol.interceptBufferProtocol('file'
-        , interceptor
-        , function handleInterceptBufferProtocolError (error) {
-          if (error)
-            console.error('MIDDLE: electron-middle interceptor failed:', error)
-        }
-      )
+  if (!app.hasOwnProperty('middle')){
+    app.middle = {
+      get: fn => stack.push(fn)
     }
-  )
+    app.on('ready'
+      , function doInterceptBufferProtocol () {
+        protocol.interceptBufferProtocol('file'
+          , interceptor
+          , function handleInterceptBufferProtocolError (error) {
+            if (error)
+              console.error('MIDDLE: electron-middle interceptor failed:', error)
+          }
+        )
+      }
+    )
+  }
 }
 
 module.exports = {
-  get: function addToMiddleWareStack(fn) {stack.push(fn)}
+  get: fn => app.middle.get(fn)
 }
 
 init()
