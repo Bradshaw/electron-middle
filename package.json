@@ -15,5 +15,6 @@
   "dependencies": {
     "async": "2.6.x",
     "mime": "^1.3.4"
-  }
+  },
+  "keywords": ["electron", "middleware", "renderer", "compiler", "file", "module", "utility"]
 }
