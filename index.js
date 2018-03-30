@@ -5,108 +5,133 @@ const mime = require('mime')
 const tryEach = require('async').tryEach
 
 
-/**
- * Returns path for file from given URL.
- *
- * 'url' module is internally used to parse URLs. For *nix file
- * system URLs 'pathname' of parsed object is used. For Window,
- * however, local files start with a slash if no host is given
- * and this functions simply drops that leading slash with no
- * further complicated logic.
- *
- * @param  {String} url URL denoting file
- * @return {String} path to file
- */
-function getPath (url) {
-  let parsed = require('url').parse(url)
-  let result = decodeURIComponent(parsed.pathname)
+function electronMiddle(){
+  function getPath (url) {
+    let parsed = require('url').parse(url)
+    let result = decodeURIComponent(parsed.pathname)
 
-  // Local files in windows start with slash if no host is given
-  if (process.platform === 'win32' && !parsed.host.trim()) {
-    result = result.substr(1)
+    // Local files in windows start with slash if no host is given
+    if (process.platform === 'win32' && !parsed.host.trim()) {
+      result = result.substr(1)
+    }
+
+    return result
   }
 
-  return result
-}
+  function defaultFileGet (file, cb) {
+    fs.readFile(file, function handleFile (err, result) {
+      if (err) {
+        cb()
+      } else {
+        cb(result)
+      }
+    })
+  }
 
-/**
- * Default file handler
- *
- * @param {string} file Path to a local file
- * @param {function} cb Callback to call with file contents
- */
-function defaultFileGet (file, cb) {
-  fs.readFile(file, function handleFile (err, result) {
-    if (err) {
-      cb()
-    } else {
-      cb(result)
+  function createCallbackWrapper (file) {
+    return function wrapCallback (fn) {
+      return function wrappedCallback (cb) {
+        fn(file
+          ,function attemptCallback (data) {
+            if (data) {
+              cb(null, data)
+            } else {
+              cb(file+' not found')
+            }
+          }
+        )
+      }
     }
-  })
-}
+  }
 
-function createCallbackWrapper (file) {
-  return function wrapCallback (fn) {
-    return function wrappedCallback (cb) {
-      fn(file
-        ,function attemptCallback (data) {
-          if (data) {
-            cb(null, data)
-          } else {
-            cb(file+' not found')
+  function createFetcher (file, callback) {
+    return function fetcher (err, result) {
+      if (!err){
+        if (typeof result == 'string'){
+          result = new Buffer(result)
+        }
+        callback({data: result, mimeType: mime.lookup(path.extname(file))})
+      } else {
+        console.error('MIDDLE: File not found: '+file)
+      }
+    }
+  }
+  
+  function getProtocolRegisterceptor(proto) {
+    return function registerceptor (request, callback) {
+      let file = getPath(request.url)
+      let wrapper = createCallbackWrapper(file)
+      let fetcher = createFetcher(file, callback)
+      let tries = stacks[proto].concat([defaultFileGet]).map(wrapper)
+      tryEach( tries
+        , fetcher
+      )
+    }
+  }
+
+  function doRegisterceptBufferProtocol (proto) {
+    let registerceptor = getProtocolRegisterceptor(proto)
+    return function (){
+      protocol.registerBufferProtocol(proto
+        , registerceptor
+        , function handleRegisterBufferProtocolError (regerror) {
+          if (regerror){
+            protocol.interceptBufferProtocol(proto
+              , registerceptor
+              , function handleInterceptBufferProtocolError (interror) {
+                if (interror){
+                  console.error(
+                    'MIDDLE: registerception failed for "'+proto+'":\n'
+                    ,regerror,'\n'
+                    ,interror
+                  )
+                }
+              }
+            )
           }
         }
       )
     }
   }
-}
+  
+  function getFile(fn) {
+    get('file', fn)
+  }
+  
+  function get(proto, fn) {
+    if (!stacks.hasOwnProperty(proto)){
+      stacks[proto] = []
+      app.on('ready', doRegisterceptBufferProtocol(proto))
+    }
+    stacks[proto].push(fn)
+  }
 
-function createFetcher (file, callback) {
-  return function fetcher (err, result) {
-    if (!err){
-      if (typeof result == 'string'){
-        result = new Buffer(result)
+  let stacks = {
+  }
+  
+  return {
+    get: (p, f) => {
+      if (typeof p == 'string'){
+        get(p, f)
+      } else {
+        getFile(p)
       }
-      callback({data: result, mimeType: mime.lookup(path.extname(file))})
-    } else {
-      console.error('MIDDLE: File not found: '+file)
+    },
+    getFile: (f) => {
+      get('file', f)
     }
   }
 }
 
-function interceptor (request, callback) {
-  let file = getPath(request.url)
-  let wrapper = createCallbackWrapper(file)
-  let fetcher = createFetcher(file, callback)
-  let tries = stack.concat([defaultFileGet]).map(wrapper)
-  tryEach( tries
-    , fetcher
-  )
-}
-
-let stack = []
-
 function init () {
   if (!app.hasOwnProperty('middle')){
-    app.middle = {
-      get: fn => stack.push(fn)
-    }
-    app.on('ready'
-      , function doInterceptBufferProtocol () {
-        protocol.interceptBufferProtocol('file'
-          , interceptor
-          , function handleInterceptBufferProtocolError (error) {
-            if (error)
-              console.error('MIDDLE: electron-middle interceptor failed:', error)
-          }
-        )
-      }
-    )
+    app.middle = electronMiddle();
   }
 }
 
 module.exports = {
-  get: fn => app.middle.get(fn)
+  get: (p, fn) => app.middle.get(p, fn),
+  getFile: fn => app.middle.getFile(fn)
 }
 
 init()
